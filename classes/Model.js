@@ -1,60 +1,45 @@
 
 
-function Model( gl, url, callback, progresscallback )
+function Model( gl, json )
 {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", url, true);
-  this.numFaces = 0;
-  this.gl = gl;
+console.log(json);
+  this.vertex_stride = 8; // values per vertex, defaults to 3 pos, 3 normal, 2 tex
 
-  var self = this;
-  xhr.onprogress = function(event) {
-    if ( event.lengthComputable && typeof(progresscallback)=='function' )
-      progresscallback(event.loaded / event.total)
-  };
-  xhr.onreadystatechange=function() {
-    if (xhr.readyState==4) {
-      if ( xhr.status==200 ) {
-        var json = JSON.parse(xhr.responseText);
-        self.vertexes = new Float32Array(json.vertexes.length);
-        for ( var i=0; i<json.vertexes.length; i++ )
-          self.vertexes[i] = json.vertexes[i];
-        self.indexes = new Uint16Array(json.indexes.length)
-        for ( var i=0; i<json.indexes.length; i++ )
-          self.indexes[i] = json.indexes[i];
+  if ( typeof(json.vertex_stride)!='undefined' )
+    this.vertex_stride = json.vertex_stride;
 
-        self.numFaces = json.indexes.length;
-        self.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, self.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, self.vertexes, gl.STATIC_DRAW);
+  this.vertices = new Float32Array(json.vertices.length);
+  for ( var i=0; i<json.vertices.length; i++ )
+    this.vertices[i] = json.vertices[i];
+  this.indexes = new Uint16Array(json.indexes.length)
+  for ( var i=0; i<json.indexes.length; i++ )
+    this.indexes[i] = json.indexes[i];
 
-        self.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, self.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, self.indexes, gl.STATIC_DRAW);
+  this.numVertexes = json.indexes.length/this.vertex_stride;
+  this.vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
 
-        if ( typeof(callback)=='function')
-          callback(self);
-      }
-      if ( xhr.status==500 )
-        console.error( 'Model() load error:'+xhr.responseText );
-    }
-  }
-  xhr.send();
+  this.ibo = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexes, gl.STATIC_DRAW);
+
 }
 
 Model.prototype.isInited = function()
 {
-  return this.numFaces>0;
+  return this.numVertexes>0;
 }
 
 Model.prototype.getCoord = function(index)
 {
   if ( !this.isInited() )
     return undefined;
-  var pos = [this.vertexes[index*8],this.vertexes[index*8+1],this.vertexes[index*8+2],1];
+  var pos = [this.vertices[index*this.vertex_stride],this.vertices[index*this.vertex_stride+1],this.vertices[index*this.vertex_stride+2],1];
   return pos;
 }
 
+// TODO bind shaders into model, hardcoding vert attribs for now
 Model.prototype.draw = function(gl, posLoc, normLoc, texLoc)
 {
   if ( !this.isInited() )
@@ -64,7 +49,7 @@ Model.prototype.draw = function(gl, posLoc, normLoc, texLoc)
     gl.vertexAttribPointer(normLoc, 3, gl.FLOAT, false, 32, 12);
     gl.vertexAttribPointer(texLoc,  2, gl.FLOAT, false, 32, 24);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-      gl.drawElements(gl.TRIANGLES, this.numFaces, gl.UNSIGNED_SHORT, 0);
+      gl.drawElements(gl.TRIANGLES, 12, gl.UNSIGNED_SHORT, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }

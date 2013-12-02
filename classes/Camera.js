@@ -41,7 +41,7 @@ Camera.prototype.bindDefaultControls = function(windowEventManager)
       if ( !windowEventManager.pointerLock && self.seenPointerLock )
         return;
       // odd but where selectors look like a move
-      if ( event.target.tagName=="HTML" )
+      if ( event.target && event.target.tagName=="HTML" )
         return;
       // shift for translate
       if ( windowEventManager.keyboard[16] )

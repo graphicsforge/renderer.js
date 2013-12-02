@@ -15,7 +15,7 @@ function WindowEventManager()
   this.mouseButton = [false, false, false];
   this.mousePos = [0, 0];
   this.mousePrev = [0, 0];
-  this.mouseDownPos = [0, 0];
+  this.mousedownPos = [0, 0];
   this.mouseDiff = [0, 0];
   this.mouseLastClickTime = new Date();
   this.pointerLock = false;
@@ -25,21 +25,21 @@ function WindowEventManager()
 // UI handler functions
 // The update the UI state, then emit() the event for any listener
 ********/
-WindowEventManager.prototype.mouseUp = function(event) {
+WindowEventManager.prototype.mouseup = function(event) {
   this.mouseButton[event.button] = false;
   this.mousePos[0] = event.clientX;
   this.mousePos[1] = event.clientY;
-  this.emit( "mouseUp", event );
+  this.emit( "mouseup", event );
 }
-WindowEventManager.prototype.mouseDown = function(event) {
+WindowEventManager.prototype.mousedown = function(event) {
   this.mouseButton[event.button] = true;
   this.mousePos[0] = event.clientX;
   this.mousePos[1] = event.clientY;
-  this.mouseDownPos = this.mousePos.slice();
-  this.emit( "mouseDown", event );
+  this.mousedownPos = this.mousePos.slice();
+  this.emit( "mousedown", event );
   this.mouseLastClickTime = new Date();
 }
-WindowEventManager.prototype.mouseMove = function(event) {
+WindowEventManager.prototype.mousemove = function(event) {
   this.mousePrev = this.mousePos.slice();
   this.mousePos[0] = event.clientX;
   this.mousePos[1] = event.clientY;
@@ -59,33 +59,33 @@ WindowEventManager.prototype.mouseMove = function(event) {
     this.mouseDiff[0] = this.mousePos[0]-this.mousePrev[0];
     this.mouseDiff[1] = this.mousePos[1]-this.mousePrev[1];
   }
-  this.emit( "mouseMove", event );
+  this.emit( "mousemove", event );
 }
-WindowEventManager.prototype.keyUp = function(event) {
+WindowEventManager.prototype.keyup = function(event) {
   this.keyboard[event.which] = false;
   // deal with combinations of shift+alt keys
   if ( event.which==224 )
     this.keyboard[18] = false;
-  this.emit( "keyUp", event );
+  this.emit( "keyup", event );
 }
-WindowEventManager.prototype.keyDown = function(event) {
+WindowEventManager.prototype.keydown = function(event) {
   this.keyboard[event.which] = true;
   // deal with combinations of shift+alt keys
   if ( event.which==224 )
     this.keyboard[18] = true;
-  this.emit( "keyDown", event );
+  this.emit( "keydown", event );
 }
-WindowEventManager.prototype.onResize = function(event)
+WindowEventManager.prototype.resize = function(event)
 {
-  this.emit( "onResize", event );
+  this.emit( "resize", event );
 }
-WindowEventManager.prototype.onLoad = function(event)
+WindowEventManager.prototype.load = function(event)
 {
-  this.emit( "onLoad", event );
+  this.emit( "load", event );
 }
-WindowEventManager.prototype.mouseWheel = function(event)
+WindowEventManager.prototype.mousewheel = function(event)
 {
-  this.emit( "mouseWheel", event );
+  this.emit( "mousewheel", event );
 }
 
 /********
@@ -95,14 +95,14 @@ WindowEventManager.prototype.mouseWheel = function(event)
 WindowEventManager.prototype.bindUIListeners = function()
 {
   var self = this;
-  window.onkeydown=function(event){self.keyDown("keyDown", event);};
-  window.onkeyup=function(event){self.keyUp("keyUp", event);};
-  window.onmousedown=function(event){self.mouseDown("mouseDown", event);};
-  window.onmouseup=function(event){self.mouseUp("mouseUp", event);};
-  window.onmousemove=function(event){self.mouseMove("mouseMove", event);};
-  window.onmousewheel=function(event){self.mouseWheel("mouseWheel", event);};
-  window.onresize=function(event){self.onResize("onResize", event);};
-  window.onload=function(event){self.onLoad("onLoad", event);};
+  window.onkeydown=function(event){self.keydown("keydown", event);};
+  window.onkeyup=function(event){self.keyup("keyup", event);};
+  window.onmousedown=function(event){self.mousedown("mousedown", event);};
+  window.onmouseup=function(event){self.mouseup("mouseup", event);};
+  window.onmousemove=function(event){self.mousemove("mousemove", event);};
+  window.onmousewheel=function(event){self.mousewheel("mousewheel", event);};
+  window.onresize=function(event){self.resize("resize", event);};
+  window.onload=function(event){self.load("load", event);};
 }
 
 /********
