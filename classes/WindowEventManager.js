@@ -95,14 +95,14 @@ WindowEventManager.prototype.mousewheel = function(event)
 WindowEventManager.prototype.bindUIListeners = function()
 {
   var self = this;
-  window.onkeydown=function(event){self.keydown("keydown", event);};
-  window.onkeyup=function(event){self.keyup("keyup", event);};
-  window.onmousedown=function(event){self.mousedown("mousedown", event);};
-  window.onmouseup=function(event){self.mouseup("mouseup", event);};
-  window.onmousemove=function(event){self.mousemove("mousemove", event);};
-  window.onmousewheel=function(event){self.mousewheel("mousewheel", event);};
-  window.onresize=function(event){self.resize("resize", event);};
-  window.onload=function(event){self.load("load", event);};
+  window.onkeydown=function(event){self.keydown(event);};
+  window.onkeyup=function(event){self.keyup(event);};
+  window.onmousedown=function(event){self.mousedown(event);};
+  window.onmouseup=function(event){self.mouseup(event);};
+  window.onmousemove=function(event){self.mousemove( event);};
+  window.onmousewheel=function(event){self.mousewheel(event);};
+  window.onresize=function(event){self.resize(event);};
+  window.onload=function(event){self.load(event);};
 }
 
 /********
