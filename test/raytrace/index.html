@@ -1,0 +1,14 @@
+<head>
+  <title>RendererJS: Preview JSON</title>
+</head>
+
+<canvas style="float:right;width:100%;height:90%;" id="preview_canvas"></canvas>
+
+
+<script>
+  var Renderer = require("renderer").Renderer;
+  var renderer = new Renderer();
+  renderer.on("initgl", function(){
+  });
+  renderer.bindCanvas("preview_canvas");
+</script>

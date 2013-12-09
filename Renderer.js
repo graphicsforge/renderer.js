@@ -241,7 +241,7 @@ Renderer.prototype.drawGL = function()
   gl.uniformMatrix4fv( this.vs_basic_mvMatrix, false, new Float32Array(mvMatrix.getAsArray()) );
   this.textures['model'].bind(gl);
   for ( var i=0; i<this.sceneObjects.length; i++ )
-    this.sceneObjects[i].draw(gl, this.posLoc, this.normLoc, this.texLoc);
+    this.sceneObjects[i].draw(gl, camera, this.posLoc, this.normLoc, this.texLoc, mvMatrix, this.vs_basic_mvMatrix);
   gl.clear( gl.DEPTH_BUFFER_BIT )
 }
 
