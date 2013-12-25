@@ -5,6 +5,7 @@ var Camera = require('./classes/Camera.js').Camera;
 var CanvasMatrix4 = require('./classes/Camera.js').CanvasMatrix4;
 var Model = require('./classes/Model.js').Model;
 var Texture = require('./classes/Texture.js').Texture;
+var Shader = require('./classes/Shader.js').Shader;
 
 Renderer.prototype = new EventEmitter;
 Renderer.constructor = Renderer;
@@ -50,30 +51,6 @@ Renderer.prototype.loadJSONModels = function(url, callback, progresscallback)
   xhr.send();
 }
 
-  // TODO also goes to scene
-  function getShader( gl, id )
-  {
-    var shaderScript = document.getElementById ( id );
-    var str = "";
-    var k = shaderScript.firstChild;
-    while ( k ){
-     if ( k.nodeType == 3 ) str += k.textContent;
-     k = k.nextSibling;
-    }
-    var shader;
-    if ( shaderScript.type == "x-shader/x-fragment" )
-       shader = gl.createShader ( gl.FRAGMENT_SHADER );
-    else if ( shaderScript.type == "x-shader/x-vertex" )
-       shader = gl.createShader(gl.VERTEX_SHADER);
-    else return null;
-    gl.shaderSource(shader, str);
-    gl.compileShader(shader);
-    if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
-    {
-      alert("error on shader:"+id+" "+gl.getShaderInfoLog(shader));
-    }
-    return shader;
-  }
 
 Renderer.prototype.displayloop = function()
 {
@@ -104,23 +81,6 @@ Renderer.prototype.initGL = function()
   this.mvMatrix = new CanvasMatrix4();
   // application setup
   this.videoAlpha = 1;
-  // shaders
-  this.prog = gl.createProgram();
-  var prog = this.prog;
-  gl.attachShader(prog, getShader( gl, "vs-basic" ));
-  gl.attachShader(prog, getShader( gl, "fs-basic" ));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-  this.posLoc = gl.getAttribLocation(prog, "aPos");
-  gl.enableVertexAttribArray( this.posLoc );
-  this.normLoc = gl.getAttribLocation(prog, "aNorm");
-  gl.enableVertexAttribArray( this.normLoc );
-  this.texLoc = gl.getAttribLocation(prog, "aTexCoord");
-  gl.enableVertexAttribArray( this.texLoc );
-  gl.uniform1f(gl.getUniformLocation(prog, "alpha"), 1);
-  // initialize shader transform variables
-  this.vs_basic_prMatrix = gl.getUniformLocation(prog, "prMatrix");
-  this.vs_basic_mvMatrix = gl.getUniformLocation(prog, "mvMatrix");
   // opengl settings
   gl.clearColor(0.2, 0.2, 0.2, 1);
   gl.clearDepth(1);
@@ -128,11 +88,17 @@ Renderer.prototype.initGL = function()
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.enable( gl.DEPTH_TEST );
+
   // load textures
   this.textures = [];
   //this.textures['background'] = new Texture(gl, '/test.jpg', function(){ self.dirty=true; });
   this.textures['crosshair'] = new Texture(gl, '/crosshair.png');
   this.textures['model'] = new Texture(gl, '/colormap.png', function(){ self.dirty=true; });
+
+  // load shaders
+  this.shaders = [];
+  this.shaders['basic'] = new Shader(gl, {"vertex_element_id":"vs-basic","fragment_element_id":"fs-basic"});
+
   // share event
   this.emit( "initgl", gl );
 }
@@ -233,16 +199,16 @@ Renderer.prototype.drawGL = function()
 
   prMatrix.makeIdentity();
   prMatrix.perspective(camera.vfov, canvas.width/canvas.height*camera.pixelAspectRatio, camera.frustrumNear, camera.frustrumFar);
-  gl.uniformMatrix4fv( this.vs_basic_prMatrix, false, new Float32Array(prMatrix.getAsArray()) );
+  gl.uniformMatrix4fv( this.shaders['basic'].vs_basic_prMatrix, false, new Float32Array(prMatrix.getAsArray()) );
   mvMatrix.makeIdentity();
   mvMatrix.rotate(90, 1,0,0);
   mvMatrix.scale(.01,.01,.01);
   mvMatrix.multRight(camera.extrinsic);
-  gl.uniformMatrix4fv( this.vs_basic_mvMatrix, false, new Float32Array(mvMatrix.getAsArray()) );
+  gl.uniformMatrix4fv( this.shaders['basic'].vs_basic_mvMatrix, false, new Float32Array(mvMatrix.getAsArray()) );
   this.textures['model'].bind(gl);
   for ( var i=0; i<this.sceneObjects.length; i++ )
-    this.sceneObjects[i].draw(gl, camera, this.posLoc, this.normLoc, this.texLoc, mvMatrix, this.vs_basic_mvMatrix);
-  gl.clear( gl.DEPTH_BUFFER_BIT )
+    this.sceneObjects[i].draw(gl, camera, this.shaders['basic'].posLoc, this.shaders['basic'].normLoc, this.shaders['basic'].texLoc, mvMatrix, this.shaders['basic'].vs_basic_mvMatrix);
+  gl.clear( gl.DEPTH_BUFFER_BIT );
 }
 
 
