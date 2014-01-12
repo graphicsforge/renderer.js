@@ -49,67 +49,12 @@ Model.prototype.getCoord = function(index)
   return pos;
 }
 
-// TODO bind shaders into model, hardcoding vert attribs for now
-Model.prototype.draw = function(gl, camera, posLoc, normLoc, texLoc, mvMatrix, vs_basic_matrix, prevModel)
+// let shader handle drawing, it needs more setup anyways
+Model.prototype.draw = function(renderer, shader)
 {
-  if ( !this.isInited() )
-    return;
-
-  if ( this.csg_mode=='intersection' )
-  {
-    return this.drawIntersect(gl, camera, posLoc, normLoc, texLoc, mvMatrix, vs_basic_matrix, prevModel);
-  }
-  mvMatrix.makeIdentity();
-  mvMatrix.rotate(90, 1,0,0);
-  mvMatrix.translate(0, 10 ,0,0);
-  mvMatrix.scale(.01,.01,.01);
-  mvMatrix.multRight(camera.extrinsic);
-  gl.uniformMatrix4fv( vs_basic_matrix, false, new Float32Array(mvMatrix.getAsArray()) );
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-    gl.vertexAttribPointer(posLoc,  3, gl.FLOAT, false, 32,  0);
-    gl.vertexAttribPointer(normLoc, 3, gl.FLOAT, false, 32, 12);
-    gl.vertexAttribPointer(texLoc,  2, gl.FLOAT, false, 32, 24);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-      gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  shader.drawModel( renderer, this );
 }
 
-
-Model.prototype.drawIntersect = function(gl, camera, posLoc, normLoc, texLoc, mvMatrix, vs_basic_matrix, prevModel)
-{
-  if ( prevModel )
-    gl.clear( gl.COLOR_BUFFER_BIT );
-  gl.depthFunc(gl.GEQUAL);
-
-  mvMatrix.makeIdentity();
-  mvMatrix.rotate(90, 1,0,0);
-  mvMatrix.scale(.01,.01,.01);
-  mvMatrix.multRight(camera.extrinsic);
-  gl.uniformMatrix4fv( vs_basic_matrix, false, new Float32Array(mvMatrix.getAsArray()) );
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-    gl.vertexAttribPointer(posLoc,  3, gl.FLOAT, false, 32,  0);
-    gl.vertexAttribPointer(normLoc, 3, gl.FLOAT, false, 32, 12);
-    gl.vertexAttribPointer(texLoc,  2, gl.FLOAT, false, 32, 24);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-      gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_SHORT, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-  gl.bindBuffer(gl.ARRAY_BUFFER, null);
-
-  gl.depthFunc(gl.LEQUAL);
-
-  if ( prevModel )
-  {
-//    prevModel.csg_mode='intersection';
-    gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.BACK);
-    prevModel.draw(gl, camera, posLoc, normLoc, texLoc, mvMatrix, vs_basic_matrix);
-    gl.disable(gl.CULL_FACE);
-    prevModel.csg_mode='union';
-  }
-}
 
 
 module.exports.Model = Model;

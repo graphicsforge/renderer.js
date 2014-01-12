@@ -186,9 +186,8 @@ Renderer.prototype.drawGL = function()
   if ( typeof(this.dirty)!='undefined' && this.dirty!=undefined && this.dirty==false )
     return 1;
   this.dirty = false;
+
   var gl = this.gl;
-  var prMatrix = this.prMatrix;
-  var mvMatrix = this.mvMatrix;
   var camera = this.camera;
   var canvas = this.canvas;
 
@@ -197,17 +196,20 @@ Renderer.prototype.drawGL = function()
   // set up scene
   gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-  prMatrix.makeIdentity();
-  prMatrix.perspective(camera.vfov, canvas.width/canvas.height*camera.pixelAspectRatio, camera.frustrumNear, camera.frustrumFar);
-  gl.uniformMatrix4fv( this.shaders['basic'].vs_basic_prMatrix, false, new Float32Array(prMatrix.getAsArray()) );
-  mvMatrix.makeIdentity();
-  mvMatrix.rotate(90, 1,0,0);
-  mvMatrix.scale(.01,.01,.01);
-  mvMatrix.multRight(camera.extrinsic);
-  gl.uniformMatrix4fv( this.shaders['basic'].vs_basic_mvMatrix, false, new Float32Array(mvMatrix.getAsArray()) );
+  this.prMatrix.makeIdentity();
+  this.prMatrix.perspective(camera.vfov, canvas.width/canvas.height*camera.pixelAspectRatio, camera.frustrumNear, camera.frustrumFar);
+
+  this.mvMatrix.makeIdentity();
+  this.mvMatrix.scale(.01,.01,.01);
+  this.mvMatrix.multRight(camera.extrinsic);
+
+  // bind stuff
   this.textures['model'].bind(gl);
+  this.shaders['basic'].bind(this);
+
+  // draw stuff
   for ( var i=0; i<this.sceneObjects.length; i++ )
-    this.sceneObjects[i].draw(gl, camera, this.shaders['basic'].posLoc, this.shaders['basic'].normLoc, this.shaders['basic'].texLoc, mvMatrix, this.shaders['basic'].vs_basic_mvMatrix);
+    this.shaders['basic'].drawModel(this, this.sceneObjects[i]);
   gl.clear( gl.DEPTH_BUFFER_BIT );
 }
 

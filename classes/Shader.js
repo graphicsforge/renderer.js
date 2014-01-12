@@ -29,8 +29,8 @@ function Shader( gl, args )
   gl.enableVertexAttribArray( this.texLoc );
   gl.uniform1f(gl.getUniformLocation(this.program, "alpha"), 1);
   // initialize shader transform variables
-  this.vs_basic_prMatrix = gl.getUniformLocation(this.program, "prMatrix");
-  this.vs_basic_mvMatrix = gl.getUniformLocation(this.program, "mvMatrix");
+  this.prMatrix = gl.getUniformLocation(this.program, "prMatrix");
+  this.mvMatrix = gl.getUniformLocation(this.program, "mvMatrix");
 }
 
 Shader.loadFromDOM = function( gl, element_id )
@@ -55,7 +55,7 @@ Shader.loadFromDOM = function( gl, element_id )
     return null;
   }
 
-console.log("created shader "+shaderScript.type);
+  console.log("created shader "+shaderScript.type);
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   // check status
@@ -64,9 +64,29 @@ console.log("created shader "+shaderScript.type);
   return shader;
 }
 
-Shader.prototype.getShader = function( gl, id )
+// bind shader and set up uniforms and attributes
+Shader.prototype.bind = function( args )
 {
-  return this.shader;
+  args.gl.uniformMatrix4fv( this.prMatrix, false, new Float32Array(args.prMatrix.getAsArray()) );
+  args.gl.uniformMatrix4fv( this.mvMatrix, false, new Float32Array(args.mvMatrix.getAsArray()) );
+}
+
+Shader.prototype.drawModel = function( renderer, model )
+{
+  var gl = renderer.gl;
+
+  if ( !model.isInited() )
+    return;
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, model.vbo);
+    // TODO check which vertex attributes the model has and at what offset
+    gl.vertexAttribPointer(this.posLoc,  3, gl.FLOAT, false, 32,  0);
+    gl.vertexAttribPointer(this.normLoc, 3, gl.FLOAT, false, 32, 12);
+    gl.vertexAttribPointer(this.texLoc,  2, gl.FLOAT, false, 32, 24);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.ibo);
+      gl.drawElements(gl.TRIANGLES, model.indices.length, gl.UNSIGNED_SHORT, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
 
 module.exports.Shader = Shader;
