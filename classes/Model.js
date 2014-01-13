@@ -15,11 +15,12 @@ function Model( gl, json )
   for ( var i=0; i<json.vertices.length; i++ )
   {
     this.vertices[vptr++] = (json.vertices[i]);
-    if ( !((i+1)%3) )
-    {
-      for ( var j=0; j<5; j++ )
-        this.vertices[vptr++] = this.csg_mode=="intersection"?0.5:1;
-    }
+    if ( json.stride==3 )
+      if ( !((i+1)%3) )
+      {
+        for ( var j=0; j<5; j++ )
+          this.vertices[vptr++] = this.csg_mode=="intersection"?0.5:1;
+      }
   }
   this.indices = new Uint16Array(json.indices.length)
   for ( var i=0; i<json.indices.length; i++ )

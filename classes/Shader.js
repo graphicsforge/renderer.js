@@ -18,7 +18,6 @@ function Shader( gl, args )
   gl.attachShader(this.program, this.vshader);
   gl.attachShader(this.program, this.fshader);
   gl.linkProgram(this.program);
-  gl.useProgram(this.program);
 
   // TODO autoget args
   this.posLoc = gl.getAttribLocation(this.program, "aPos");
@@ -27,10 +26,10 @@ function Shader( gl, args )
   gl.enableVertexAttribArray( this.normLoc );
   this.texLoc = gl.getAttribLocation(this.program, "aTexCoord");
   gl.enableVertexAttribArray( this.texLoc );
-  gl.uniform1f(gl.getUniformLocation(this.program, "alpha"), 1);
   // initialize shader transform variables
   this.prMatrix = gl.getUniformLocation(this.program, "prMatrix");
   this.mvMatrix = gl.getUniformLocation(this.program, "mvMatrix");
+  this.alpha = gl.getUniformLocation(this.program, "alpha");
 }
 
 Shader.loadFromDOM = function( gl, element_id )
@@ -67,16 +66,20 @@ Shader.loadFromDOM = function( gl, element_id )
 // bind shader and set up uniforms and attributes
 Shader.prototype.bind = function( args )
 {
-  args.gl.uniformMatrix4fv( this.prMatrix, false, new Float32Array(args.prMatrix.getAsArray()) );
-  args.gl.uniformMatrix4fv( this.mvMatrix, false, new Float32Array(args.mvMatrix.getAsArray()) );
+  var gl = args.gl;
+  gl.useProgram(this.program);
+
+  gl.uniformMatrix4fv( this.prMatrix, false, new Float32Array(args.prMatrix.getAsArray()) );
+  gl.uniformMatrix4fv( this.mvMatrix, false, new Float32Array(args.mvMatrix.getAsArray()) );
+  gl.uniform1f( this.alpha, 1 );
 }
 
 Shader.prototype.drawModel = function( renderer, model )
 {
-  var gl = renderer.gl;
-
-  if ( !model.isInited() )
+  if ( typeof(model)=='undefined' || !model.isInited() )
     return;
+
+  var gl = renderer.gl;
 
   gl.bindBuffer(gl.ARRAY_BUFFER, model.vbo);
     // TODO check which vertex attributes the model has and at what offset

@@ -14,6 +14,7 @@ function Renderer()
 {
   this.dirty = true;
   this.sceneObjects = [];
+  this.models = [];
   this.windowEventManager = new WindowEventManager();
   this.windowEventManager.bindUIListeners();
 }
@@ -95,6 +96,10 @@ Renderer.prototype.initGL = function()
   this.textures['crosshair'] = new Texture(gl, '/crosshair.png');
   this.textures['model'] = new Texture(gl, '/colormap.png', function(){ self.dirty=true; });
 
+  this.loadJSONModels('/square.json', function() {
+    self.models['square'] = self.sceneObjects.pop();
+  });
+
   // load shaders
   this.shaders = [];
   this.shaders['basic'] = new Shader(gl, {"vertex_element_id":"vs-basic","fragment_element_id":"fs-basic"});
@@ -142,41 +147,28 @@ Renderer.prototype.bindCanvas = function(canvasID)
   this.displayloop();
 }
 
-  Renderer.prototype.onResize = function(event)
-  {
-    if ( this.canvas==undefined )
-      return;
-    this.canvasPos = WindowEventManager.getOffset(this.canvas);
-    // reshape canvas contents
-    this.canvas.width = parseInt(this.canvas.clientWidth);
-    this.canvas.height = parseInt(this.canvas.clientHeight);
-    this.dirty = true;
-  }
+Renderer.prototype.onResize = function(event)
+{
+  if ( this.canvas==undefined )
+    return;
+  this.canvasPos = WindowEventManager.getOffset(this.canvas);
+  // reshape canvas contents
+  this.canvas.width = parseInt(this.canvas.clientWidth);
+  this.canvas.height = parseInt(this.canvas.clientHeight);
+  this.dirty = true;
+}
 
-  Renderer.prototype.onMouseMove = function(event)
-  {
-    if ( this.canvas==undefined )
-      return;
-    // grab relative mouse position ( range -0.5 to 0.5 )
-    this.mousePos = this.windowEventManager.mousePos.slice(0);
-    this.mousePos[0] = (this.mousePos[0]-this.canvasPos[0]);
-    this.mousePos[1] = (this.mousePos[1]-this.canvasPos[1]);
-    this.dirty = true;
-    this.emit( event );
-  }
-
-  Renderer.prototype.set3DScene = function()
-  {
-    // draw 3D scene
-    this.prMatrix.makeIdentity();
-    this.prMatrix.perspective(this.camera.vfov, this.canvas.width/this.canvas.height*this.camera.pixelAspectRatio, this.camera.frustrumNear, this.camera.frustrumFar);
-    this.gl.uniformMatrix4fv( this.vs_basic_prMatrix, false, new Float32Array(this.prMatrix.getAsArray()) );
-    this.gl.uniform1f(this.gl.getUniformLocation(this.prog, "alpha"), .9);
-    this.mvMatrix.makeIdentity();
-    this.mvMatrix.rotate(90, 1,0,0);
-    this.mvMatrix.multRight(this.camera.extrinsic);
-    this.gl.uniformMatrix4fv( this.vs_basic_mvMatrix, false, new Float32Array(this.mvMatrix.getAsArray()) );
-  }
+Renderer.prototype.onMouseMove = function(event)
+{
+  if ( this.canvas==undefined )
+    return;
+  // grab relative mouse position ( range -0.5 to 0.5 )
+  this.mousePos = this.windowEventManager.mousePos.slice(0);
+  this.mousePos[0] = (this.mousePos[0]-this.canvasPos[0]);
+  this.mousePos[1] = (this.mousePos[1]-this.canvasPos[1]);
+  this.dirty = true;
+  this.emit( event );
+}
 
 Renderer.prototype.drawGL = function()
 {
@@ -196,6 +188,18 @@ Renderer.prototype.drawGL = function()
   // set up scene
   gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
+  // ortho view
+  this.prMatrix.makeIdentity();
+  this.prMatrix.ortho(0, 1, 1, 0, -1, 1);
+  gl.uniformMatrix4fv( this.vs_basic_prMatrix, false, new Float32Array(this.prMatrix.getAsArray()) );
+  this.mvMatrix.makeIdentity();
+  this.textures['model'].bind(gl);
+  this.shaders['basic'].bind(this);
+  this.shaders['basic'].drawModel(this, this.models['square']);
+
+  gl.clear( gl.DEPTH_BUFFER_BIT );
+
+  // perspective view
   this.prMatrix.makeIdentity();
   this.prMatrix.perspective(camera.vfov, canvas.width/canvas.height*camera.pixelAspectRatio, camera.frustrumNear, camera.frustrumFar);
 
@@ -210,7 +214,6 @@ Renderer.prototype.drawGL = function()
   // draw stuff
   for ( var i=0; i<this.sceneObjects.length; i++ )
     this.shaders['basic'].drawModel(this, this.sceneObjects[i]);
-  gl.clear( gl.DEPTH_BUFFER_BIT );
 }
 
 
