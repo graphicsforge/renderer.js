@@ -102,7 +102,7 @@ Renderer.prototype.initGL = function()
 
   // load shaders
   this.shaders = [];
-  this.shaders['basic'] = new Shader(gl, {"vertex_element_id":"vs-basic","fragment_element_id":"fs-basic"});
+  this.shaders['basic'] = new Shader(gl, {"vertex_element_id":"vs-raymarch","fragment_element_id":"fs-raymarch"});
 
   // share event
   this.emit( "initgl", gl );

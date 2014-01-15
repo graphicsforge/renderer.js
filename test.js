@@ -3,6 +3,7 @@ var http = require('http'); // HTTP server
 var fs = require('fs'); // File System
 
 var previewJSON = require('./test/previewJSON.js');
+var raytrace = require('./test/raymarch.js');
 
 // distribute our render.min.js file
 var HTTP_PORT = 3000;
@@ -39,3 +40,8 @@ previewJSON.setBasePath("./test/previewJSON");
 previewJSON.setRenderJsUrl("http://localhost:"+HTTP_PORT+"/renderer.min.js");
 previewJSON.setPort(3001);
 previewJSON.startServer();
+
+raytrace.setBasePath("./test/raymarch");
+raytrace.setRenderJsUrl("http://localhost:"+HTTP_PORT+"/renderer.min.js");
+raytrace.setPort(3002);
+raytrace.startServer();

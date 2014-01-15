@@ -18,14 +18,15 @@ function Shader( gl, args )
   gl.attachShader(this.program, this.vshader);
   gl.attachShader(this.program, this.fshader);
   gl.linkProgram(this.program);
+  gl.useProgram(this.program);
 
   // TODO autoget args
   this.posLoc = gl.getAttribLocation(this.program, "aPos");
   gl.enableVertexAttribArray( this.posLoc );
-  this.normLoc = gl.getAttribLocation(this.program, "aNorm");
+/*  this.normLoc = gl.getAttribLocation(this.program, "aNorm");
   gl.enableVertexAttribArray( this.normLoc );
   this.texLoc = gl.getAttribLocation(this.program, "aTexCoord");
-  gl.enableVertexAttribArray( this.texLoc );
+  gl.enableVertexAttribArray( this.texLoc );*/
   // initialize shader transform variables
   this.prMatrix = gl.getUniformLocation(this.program, "prMatrix");
   this.mvMatrix = gl.getUniformLocation(this.program, "mvMatrix");
@@ -44,9 +45,9 @@ Shader.loadFromDOM = function( gl, element_id )
     k = k.nextSibling;
   }
   // get shader type from attribute
-  if ( shaderScript.type == "x-shader/x-fragment" )
+  if ( shaderScript.type.match(/(fragment|pixel)/) )
     var shader = gl.createShader( gl.FRAGMENT_SHADER );
-  else if ( shaderScript.type == "x-shader/x-vertex" )
+  else if ( shaderScript.type.match(/vertex/) )
     var shader = gl.createShader( gl.VERTEX_SHADER );
   else
   {

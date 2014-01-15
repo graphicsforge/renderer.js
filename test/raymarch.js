@@ -17,6 +17,7 @@ function sendMainPage(req, res)
   var output = ""+
     "\n<script src='"+RENDER_JS_URL+"'></script>"+
     "\n"+fs.readFileSync(PATH+'/shaders.glsl', 'utf8')+
+    "\n"+fs.readFileSync(PATH+'/raymarch.glsl', 'utf8')+
         fs.readFileSync(PATH+'/index.html', 'utf8')
   } catch ( error ) { console.log( error.toString() ) }
   res.end(output);
@@ -24,7 +25,7 @@ function sendMainPage(req, res)
 
 function startServer()
 {
-  console.log("launching previewJSON server on port "+HTTP_PORT);
+  console.log("launching raymarch server on port "+HTTP_PORT);
   // make a standard http server
   httpServer = http.createServer(function(req, res){
     // respond to web requests

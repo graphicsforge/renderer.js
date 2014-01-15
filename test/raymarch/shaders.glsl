@@ -1,4 +1,4 @@
-<script id="vs-basic" type="x-shader/x-vertex"> 
+<script id="vs-basic" type="vertex"> 
   attribute vec3 aPos;
   attribute vec3 aNorm;
   attribute vec2 aTexCoord;
@@ -21,7 +21,7 @@
   }
 </script> 
  
-<script id="fs-basic" type="x-shader/x-fragment">
+<script id="fs-basic" type="fragment">
   #ifdef GL_ES
   precision highp float;
   #endif
