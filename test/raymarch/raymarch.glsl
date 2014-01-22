@@ -1,6 +1,6 @@
 <script id="vs-raymarch" type="vertex"> 
-  attribute vec3 aPos;
-//  attribute vec3 aNorm;
+  attribute vec3 pos;
+  attribute vec3 aNorm;
   attribute vec2 aTexCoord;
   uniform float alpha;
 
@@ -11,7 +11,7 @@
   float i;
 
   void main(void) {
-    gl_Position = prMatrix * mvMatrix * vec4(aPos, 1.);
+    gl_Position = prMatrix * mvMatrix * vec4(pos, 1.) + 0.001*(vec4(aNorm, 1.)+vec4(aTexCoord, 0., 0.));
   }
 </script> 
 
@@ -27,7 +27,7 @@
   uniform sampler2D iChannel0;
   //uniform vec4 iDate;
 
-  float iGlobalTime = 0.;
+  float iGlobalTime = 0.5;
 
   // raymarching by inigo quilez - iq/2013
   float fbm( vec3 p, vec3 n )

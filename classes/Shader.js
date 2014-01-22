@@ -1,15 +1,48 @@
 
+/**
+ * class ShaderVariable
+ *
+ * tracks a variable (attribute|uniform) used by a shader and has helper functions
+**/
+function ShaderVariable(values)
+{
+  this.index = null;
+  this.name = values.name;
+  this.type = values.type;
+  this.datatype = "GL_FLOAT";
+}
+// function to lookup the size per shader type
+ShaderVariable.prototype.getSize = function()
+{
+  var size = 1;
+  this.type.replace(/mat([0-9]+)/, function( match, num ) {
+    size = num*num;
+    return match;
+  });
+  this.type.replace(/vec([0-9]+)/, function( match, num ) {
+    size = num;
+    return match;
+  });
+  this.type.replace(/float/, function( match, num ) {
+    size = 1;
+    return match;
+  });
+  return size;
+}
+
 function Shader( gl, args )
 {
   this.vshader = null;
   this.fshader = null;
   this.source = "";
+  this.attributes = [];
+  this.uniforms = [];
 
   // if we got the id of a DOM element
   if ( typeof(args.vertex_element_id)=='string' )
-    this.vshader = Shader.loadFromDOM(gl, args.vertex_element_id);
+    this.vshader = this.loadFromDOM(gl, args.vertex_element_id);
   if ( typeof(args.fragment_element_id)=='string' )
-    this.fshader = Shader.loadFromDOM(gl, args.fragment_element_id);
+    this.fshader = this.loadFromDOM(gl, args.fragment_element_id);
 
   if ( !this.vshader || !this.fshader )
     console.log('Renderer::Shader ERROR: could not load shaders');
@@ -20,20 +53,22 @@ function Shader( gl, args )
   gl.linkProgram(this.program);
   gl.useProgram(this.program);
 
-  // TODO autoget args
-  this.posLoc = gl.getAttribLocation(this.program, "aPos");
-  gl.enableVertexAttribArray( this.posLoc );
-/*  this.normLoc = gl.getAttribLocation(this.program, "aNorm");
-  gl.enableVertexAttribArray( this.normLoc );
-  this.texLoc = gl.getAttribLocation(this.program, "aTexCoord");
-  gl.enableVertexAttribArray( this.texLoc );*/
+  // enable any attributes we found
+  for ( var i=0; i<this.attributes.length; i++ )
+  {
+    this.attributes[i].index = gl.getAttribLocation(this.program, this.attributes[i].name);
+    gl.enableVertexAttribArray( this.attributes[i].index );
+  }
   // initialize shader transform variables
   this.prMatrix = gl.getUniformLocation(this.program, "prMatrix");
   this.mvMatrix = gl.getUniformLocation(this.program, "mvMatrix");
   this.alpha = gl.getUniformLocation(this.program, "alpha");
+
+  this.resolution = gl.getUniformLocation(this.program, "iResolution");
+  gl.uniform3f( this.resolution, 500, 500, 1 );
 }
 
-Shader.loadFromDOM = function( gl, element_id )
+Shader.prototype.loadFromDOM = function( gl, element_id )
 {
   // extract source from text nodes
   var shaderScript = document.getElementById ( element_id );
@@ -54,13 +89,25 @@ Shader.loadFromDOM = function( gl, element_id )
     console.log("Renderer::Shader ERROR unknown type for \""+element_id+"\", type must be (vertex|fragment)");
     return null;
   }
-
-  console.log("created shader "+shaderScript.type);
+  console.log("creating shader "+shaderScript.type);
+  // compile shader
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   // check status
   if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
     console.log("Renderer::Shader ERROR compiling:"+element_id+" "+gl.getShaderInfoLog(shader));
+
+  // extract attributes and uniforms
+  var self = this;
+  source.replace(/\n[ ]+uniform[ ]+([^ ]+)[ ]+([^ ;]+)/g, function( match, type, name, index ) {
+    self.uniforms.push( new ShaderVariable({'name':name, 'type':type}) );
+    return match;
+  });
+  source.replace(/\n[ ]+attribute[ ]+([^ ]+)[ ]+([^ ;]+)/g, function( match, type, name, index ) {
+    self.attributes.push( new ShaderVariable({'name':name, 'type':type}) );
+    return match;
+  });
+
   return shader;
 }
 
@@ -83,10 +130,17 @@ Shader.prototype.drawModel = function( renderer, model )
   var gl = renderer.gl;
 
   gl.bindBuffer(gl.ARRAY_BUFFER, model.vbo);
-    // TODO check which vertex attributes the model has and at what offset
-    gl.vertexAttribPointer(this.posLoc,  3, gl.FLOAT, false, 32,  0);
-    gl.vertexAttribPointer(this.normLoc, 3, gl.FLOAT, false, 32, 12);
-    gl.vertexAttribPointer(this.texLoc,  2, gl.FLOAT, false, 32, 24);
+
+    // assign vertex attributes ( I hope your shader attribute definitions match your vbo packing )
+    var offset = 0;
+    this.stride = 32;
+    for ( var i=0; i<this.attributes.length; i++ )
+    {
+      var size = this.attributes[i].getSize();
+      var normalized = false;
+      gl.vertexAttribPointer(this.attributes[i].index,  size, gl.FLOAT, normalized, this.stride, offset);
+      offset += size*4;
+    }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.ibo);
       gl.drawElements(gl.TRIANGLES, model.indices.length, gl.UNSIGNED_SHORT, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
