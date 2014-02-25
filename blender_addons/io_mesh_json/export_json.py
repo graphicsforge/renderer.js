@@ -55,9 +55,9 @@ def _write_mesh( fw, object, mesh, EXPORT_NORMALS ):
         # our vbo stride
         fw("\"stride\": ")
         if ( EXPORT_NORMALS ):
-          fw("3,")
-        else:
           fw("6,")
+        else:
+          fw("3,")
         # drop our vert positions
         fw("\"vbo\": [")
         for vertex in mesh.vertices:
@@ -68,6 +68,13 @@ def _write_mesh( fw, object, mesh, EXPORT_NORMALS ):
             else:
                 fw("\n%f,%f,%f" % (vertex.co.x,vertex.co.y,vertex.co.z))
         fw("]")
+
+        bones, num_bones = generate_bones()
+        fw("\n\"bones\": %s" % bones)
+
+        weights = generate_weights(object, mesh)
+        fw("\n\"indices\": %s" % weights)
+
         fw("}\n")
     else:
         print("ERROR: tried to export a mesh without sufficient verts!")
@@ -113,3 +120,114 @@ def save(operator, context, filepath="",
                  )
 
     return {'FINISHED'}
+
+# export armature
+# (only the first armature will exported)
+def get_armature():
+    if len(bpy.data.armatures) == 0:
+        print("Warning: no armatures in the scene")
+        return None, None
+
+    armature = bpy.data.armatures[0]
+
+    # Someone please figure out a proper way to get the armature node
+    for object in bpy.data.objects:
+        if object.type == 'ARMATURE':
+            return armature, object
+
+    print("Warning: no node of type 'ARMATURE' in the scene")
+    return None, None
+
+# export bones
+# (only the first armature will exported)
+def generate_bones():
+
+    armature, armatureObject = get_armature()
+    if armature is None or armatureObject is None:
+        return "", 0
+
+    hierarchy = []
+
+    TEMPLATE_BONE = '{"parent":%d,"name":"%s","pos":[%g,%g,%g],"worldpos":[%g,%g,%g],"bonematrix":[0,0,0,1...]}\n'
+
+    for bone in armature.bones:
+        bonePos = None
+        boneIndex = None
+        if bone.parent is None:
+            bonePos = bone.head_local
+            boneIndex = -1
+        else:
+            bonePos = bone.head_local - bone.parent.head_local
+            boneIndex = i = 0
+            for parent in armature.bones:
+                if parent.name == bone.parent.name:
+                    boneIndex = i
+                i += 1
+
+        bonePosWorld = armatureObject.matrix_world * bonePos
+        joint = TEMPLATE_BONE % (boneIndex, bone.name, bonePos.x, bonePos.y, bonePos.z, bonePosWorld.x, bonePosWorld.y, bonePosWorld.z)
+        hierarchy.append(joint)
+                
+    bones_string = '['+",".join(hierarchy)+']'
+
+    return bones_string, len(armature.bones)
+
+
+# export weights
+def generate_weights(object, mesh):
+
+    weights_json = "["
+    weights = []
+
+    armature, armatureObject = get_armature()
+
+    i = 0
+    mesh_index = -1
+
+    # find the original object
+
+    for obj in bpy.data.objects:
+        if obj.name == mesh.name or obj == object:
+            mesh_index = i
+        i += 1
+
+    if mesh_index == -1:
+        print("generate_indices: couldn't find object for mesh", mesh.name)
+        return "", ""
+
+    object = bpy.data.objects[mesh_index]
+
+    for vertex in mesh.vertices:
+
+        vertex_json = '{'
+
+        bone_array = []
+        indices = []
+        vertex_weights = []
+
+        for group in vertex.groups:
+            index = group.group
+            weight = group.weight
+
+            bone_array.append( (index, weight) )
+
+        for i in range(0, len(bone_array), 1):
+
+            bone_proxy = bone_array[i]
+            
+            index = bone_proxy[0]
+            weight = bone_proxy[1]
+
+
+            for bone_index, bone in enumerate(armature.bones):
+
+                if object.vertex_groups[index].name == bone.name:
+                    vertex_weights.append('"%d":%g' % (bone_index, weight))
+        vertex_json += (",".join(vertex_weights))
+        vertex_json += '}\n'
+        weights.append( vertex_json )
+
+    weights_json += (",".join(weights))
+    weights_json += "]"
+
+    return weights_json
