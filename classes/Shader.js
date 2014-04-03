@@ -65,7 +65,7 @@ function Shader( gl, args )
   this.alpha = gl.getUniformLocation(this.program, "alpha");
 
   this.resolution = gl.getUniformLocation(this.program, "iResolution");
-  gl.uniform3f( this.resolution, 500, 500, 1 );
+  gl.uniform3f( this.resolution, 1000, 400, 1 );
 }
 
 Shader.prototype.loadFromDOM = function( gl, element_id )
@@ -117,9 +117,18 @@ Shader.prototype.bind = function( args )
   var gl = args.gl;
   gl.useProgram(this.program);
 
-  gl.uniformMatrix4fv( this.prMatrix, false, new Float32Array(args.prMatrix.getAsArray()) );
-  gl.uniformMatrix4fv( this.mvMatrix, false, new Float32Array(args.mvMatrix.getAsArray()) );
-  gl.uniform1f( this.alpha, 1 );
+  // assign uniform attributes
+  for ( var i=0; i<this.uniforms.length; i++ )
+  {
+    var uniform = this.uniforms[i];
+    // TODO add the other types
+    if ( uniform.type=="mat4" )
+      gl.uniformMatrix4fv( this[uniform.name], false, new Float32Array(args[uniform.name].getAsArray()) );
+    else if ( uniform.type=="vec4" )
+      gl.uniform4fv( this[uniform.name], false, new Float32Array(args[uniform.name].getAsArray()) );
+    else if ( uniform.type=="float" )
+      gl.uniform1f( this[uniform.name], args[uniform.name] );
+  }
 }
 
 Shader.prototype.drawModel = function( renderer, model )

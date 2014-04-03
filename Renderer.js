@@ -24,6 +24,7 @@ Renderer.prototype.loadJSONModels = function(url, callback, progresscallback)
 {
   var self = this;
   var xhr = new XMLHttpRequest();
+  xhr.overrideMimeType("application/json");
   xhr.open("GET", url, true);
 
   xhr.onprogress = function(event) {

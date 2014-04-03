@@ -10,7 +10,7 @@ function Model( gl, json )
   if ( typeof(json.type)!='undefined' )
     this.csg_mode = json.type;
 
-  this.vertices = new Float32Array(json.vertices.length/3*this.vertex_stride);
+  this.vertices = new Float32Array(Math.ceil(json.vertices.length/3*this.vertex_stride));
   var vptr = 0;
   for ( var i=0; i<json.vertices.length; i++ )
   {
